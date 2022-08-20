@@ -19,7 +19,7 @@ func NewFileAgeCollector(filePatterns []string) *fileAgeCollector {
 	return &fileAgeCollector{
 		filePatterns:       filePatterns,
 		num_files_matching: prometheus.NewDesc("file_age_num_files_matching", "Number of files matching glob patterns", nil, nil),
-		age_in_seconds:     prometheus.NewDesc("file_age_age_in_seconds", "File age in seconds", []string{"path"}, nil),
+		age_in_seconds:     prometheus.NewDesc("file_age_in_seconds", "File age in seconds", []string{"path"}, nil),
 	}
 }
 
