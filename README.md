@@ -5,5 +5,5 @@ Prometheus exporter for metrics about file modification times.
 # Usage
 
 ```
-fileage_exporter -file "/backup/*.backup" -file "/foo/bar.json"
+fileage-exporter -file "/backup/*.backup" -file "/foo/bar.json"
 ```
