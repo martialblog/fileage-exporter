@@ -11,13 +11,13 @@ import (
 
 var build = "development"
 
-type files []string
+type globpatterns []string
 
-func (i *files) String() string {
+func (i *globpatterns) String() string {
 	return fmt.Sprintf("%d", *i)
 }
 
-func (i *files) Set(value string) error {
+func (i *globpatterns) Set(value string) error {
 	*i = append(*i, value)
 	return nil
 }
@@ -28,8 +28,8 @@ var (
 )
 
 func main() {
-	var filePatterns files
-	flag.Var(&filePatterns, "file", "file to export")
+	var filePatterns globpatterns
+	flag.Var(&filePatterns, "file", "Files to include. Can be used multiple times with Golang glob patterns.")
 	flag.Parse()
 
 	// Register Collectors
@@ -50,7 +50,11 @@ func main() {
 	log.Printf("Version: %s", build)
 	log.Printf("Listening on address: %s", *listenAddress)
 
-	log.Printf("File Patterns: %s", filePatterns)
+	if len(filePatterns) == 0 {
+		log.Printf("Warning: No File Pattern provided")
+	} else {
+		log.Printf("File Patterns: %s", filePatterns)
+	}
 
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))
 }
