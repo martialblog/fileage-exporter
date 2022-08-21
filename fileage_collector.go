@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+type filestat struct {
+	age_in_seconds float64
+	size_in_bytes  float64
+}
+
 type fileAgeCollector struct {
 	filePatterns       []string
 	num_files_matching *prometheus.Desc
@@ -39,16 +44,9 @@ func (c *fileAgeCollector) Collect(ch chan<- prometheus.Metric) {
 
 func (c *fileAgeCollector) collect(ch chan<- prometheus.Metric) error {
 
-	var files []string
-
-	// Get list of file from Glob and append to single list
-	for _, v := range c.filePatterns {
-		f, err := filepath.Glob(v)
-		if err != nil {
-			// TODO Handle Error
-			log.Fatal(err)
-		}
-		files = append(files, f...)
+	files, err := getFilePaths(c.filePatterns)
+	if err != nil {
+		return err
 	}
 
 	// Number of files matching the given patterns
@@ -59,20 +57,42 @@ func (c *fileAgeCollector) collect(ch chan<- prometheus.Metric) error {
 	wg.Add(len(files))
 	for _, filepath := range files {
 		go func(filepath string) {
-			finfo, err := os.Stat(filepath)
-			if err != nil {
-				// TODO Handle Error
-				log.Fatal(err)
-			}
-
-			fileAgeInSeconds := time.Since(finfo.ModTime()).Seconds()
-			fileSizeInBytes := float64(finfo.Size())
-			ch <- prometheus.MustNewConstMetric(c.age_in_seconds, prometheus.CounterValue, fileAgeInSeconds, filepath)
-			ch <- prometheus.MustNewConstMetric(c.size_in_bytes, prometheus.GaugeValue, fileSizeInBytes, filepath)
+			fs, _ := getFileStats(filepath)
+			// TODO Handle Errors
+			ch <- prometheus.MustNewConstMetric(c.age_in_seconds, prometheus.CounterValue, fs.age_in_seconds, filepath)
+			ch <- prometheus.MustNewConstMetric(c.size_in_bytes, prometheus.GaugeValue, fs.size_in_bytes, filepath)
 			wg.Done()
 		}(filepath)
 	}
 
 	wg.Wait()
 	return nil
+}
+
+// Get and calculate stats from file
+func getFileStats(filepath string) (filestat, error) {
+	var fstat filestat
+
+	finfo, err := os.Stat(filepath)
+	if err != nil {
+		return fstat, err
+	}
+
+	fstat.age_in_seconds = time.Since(finfo.ModTime()).Seconds()
+	fstat.size_in_bytes = float64(finfo.Size())
+	return fstat, nil
+}
+
+// Get list of files from Glob and append to single list
+func getFilePaths(globpatterns []string) ([]string, error) {
+	var files []string
+
+	for _, v := range globpatterns {
+		f, err := filepath.Glob(v)
+		if err != nil {
+			return files, err
+		}
+		files = append(files, f...)
+	}
+	return files, nil
 }

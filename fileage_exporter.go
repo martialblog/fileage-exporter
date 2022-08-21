@@ -13,12 +13,12 @@ var build = "development"
 
 type globpatterns []string
 
-func (i *globpatterns) String() string {
-	return fmt.Sprintf("%d", *i)
+func (gp *globpatterns) String() string {
+	return fmt.Sprintf("%s", *gp)
 }
 
-func (i *globpatterns) Set(value string) error {
-	*i = append(*i, value)
+func (gp *globpatterns) Set(value string) error {
+	*gp = append(*gp, value)
 	return nil
 }
 
